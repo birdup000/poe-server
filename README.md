@@ -37,6 +37,8 @@ The server will start and listen on `http://localhost:8000`.
 
 ### Generate AI Response
 
+```
+
 - **Endpoint**: `/generate-response`
 - **Method**: POST
 - **Request Body**:

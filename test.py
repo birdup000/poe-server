@@ -1,6 +1,6 @@
 import requests
 
-url = "http://10.144.22.98:8080/generate-response"
+url = "http://localhost:8080/generate-response"
 
 payload = {"text": "Hello, how are you?"}
 

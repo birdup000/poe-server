@@ -15,8 +15,8 @@ pip install -r requirements.txt
 1. Clone the repository:
 
 ```shell
-git clone <repository-url>
-cd <repository-directory>
+git clone https://github.com/greengeckowizard/poe-server
+cd poe-server
 ```
 
 2. Install the dependencies:
@@ -28,7 +28,7 @@ pip install -r requirements.txt
 3. Run the FastAPI server:
 
 ```shell
-python main.py
+python poeserver.py
 `
 
 The server will start and listen on `http://localhost:8000`.

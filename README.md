@@ -80,4 +80,4 @@ If you want to contribute to this project, please follow these steps:
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+See the [LICENSE](LICENSE) file for details.

@@ -28,7 +28,7 @@ pip install -r requirements.txt
 3. Run the FastAPI server:
 
 ```shell
-python poeserver.py
+python server.py
 `
 
 The server will start and listen on `http://localhost:8000`.

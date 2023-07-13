@@ -16,18 +16,27 @@ except ImportError:
     import poe
 
 # Set up logging
-logging.basicConfig(filename='app.log', level=logging.INFO)
+logging.basicConfig(filename="app.log", level=logging.INFO)
 
 app = FastAPI()
+
 
 class Message(BaseModel):
     text: str
 
+
 class PoeResponse(BaseModel):
     response: str
 
+
 class PoeProvider:
-    def __init__(self, POE_TOKENS: list = None, AI_MODEL: str = "chinchilla", proxy: str = None, **kwargs):
+    def __init__(
+        self,
+        POE_TOKENS: list = None,
+        AI_MODEL: str = "chinchilla",
+        proxy: str = None,
+        **kwargs,
+    ):
         self.POE_TOKENS = POE_TOKENS or []
         self.AI_MODEL = AI_MODEL.lower()
         self.current_token_index = 0
@@ -47,22 +56,42 @@ class PoeProvider:
                 if self.AI_MODEL not in self.client.bot_names:
                     self.AI_MODEL = self.client.get_bot_by_codename(self.AI_MODEL)
 
-                for chunk in self.client.send_message(chatbot=self.AI_MODEL, message=prompt):
+                for chunk in self.client.send_message(
+                    chatbot=self.AI_MODEL, message=prompt
+                ):
                     pass
                 return chunk["text"]
-            except Exception as e:  # Catch all exceptions as the correct ones are unknown
-                logging.error(f"Error during instruction: {str(e)}")
+            except poe.exceptions.RateLimitError as e:  # Handle rate limit errors
+                logging.error(f"Rate limit error: {str(e)}")
                 self._rotate_token()
-                time.sleep(2 ** i)  # Exponential backoff
+                time.sleep(2**i)  # Exponential backoff
 
-        raise HTTPException(status_code=429, detail="Rate limit exceeded despite retries")
+            except poe.exceptions.InvalidTokenError as e:  # Handle invalid token errors
+                logging.error(f"Invalid token error: {str(e)}")
+                self._rotate_token()
+                time.sleep(2**i)  # Exponential backoff
+
+            except Exception as e:  # Catch all other exceptions
+                logging.error(f"Unexpected error during instruction: {str(e)}")
+                self._rotate_token()
+                time.sleep(2**i)  # Exponential backoff
+
+        raise HTTPException(
+            status_code=429, detail="Rate limit exceeded despite retries"
+        )
+
 
 # Initialize PoeProvider here
 poe_provider = PoeProvider(
-    POE_TOKENS=["3iri66XKmCCXYwvgB4mMng%3D%3D", "fY96RYHgy8I4-TUygsNvzQ%3D%3D", "fY96RYHgy8I4-TUygsNvzQ%3D%3D"],
+    POE_TOKENS=[
+        "tokengoeshere",
+        "tokengoeshere",
+        "tokengoeshere",
+    ],
     AI_MODEL="chinchilla",
-    proxy="socks5://user:pass@server:port"
+    proxy="socks5://user:pass@server:port",
 )
+
 
 @app.post("/generate-response", response_model=PoeResponse)
 async def generate_response(request: Request, message: Message):
@@ -72,6 +101,7 @@ async def generate_response(request: Request, message: Message):
     except Exception as e:
         logging.error(f"Error during response generation: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

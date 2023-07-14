@@ -2,6 +2,20 @@
 
 This project is a FastAPI-based application that generates AI-generated responses using the Poe API.
 
+
+
+
+## Project To-Do List
+
+for this project:
+
+- [x] Token rotational (working but doesn't flip back in beginning the list after running out of tokens)
+- [ ] Add OPEN AI format of api like (/v1/chat/completions)
+- [ ] Work on Stability so not overloaded easily
+
+
+
+
 ## Installation
 
 To install the project dependencies, run the following command:

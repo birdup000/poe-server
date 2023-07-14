@@ -39,7 +39,16 @@ cd poe-server
 pip install -r requirements.txt
 ```
 
-3. Run the FastAPI server:
+3. Define Proxy and Tokens inside code
+
+if you don't define proxy you will have this error
+
+```
+tls_client.exceptions.TLSClientExeption: failed to build client out of request input: parse "socks5://user:pass@server:port": invalid port ":port" after host
+```
+
+
+4. Run the FastAPI server:
 
 ```shell
 python server.py

@@ -5,6 +5,7 @@ import asyncio
 import uvicorn
 import time
 import logging
+from typing import List
 
 try:
     import poe
@@ -20,20 +21,15 @@ logging.basicConfig(filename="app.log", level=logging.INFO)
 
 app = FastAPI()
 
-
 class Message(BaseModel):
     role: str
     content: str
 
+class Messages(BaseModel):
+    messages: List[Message]
 
 class PoeResponse(BaseModel):
-    response: str
-
-
-class ChatCompletionRequest(BaseModel):
-    model: str
-    messages: list[Message]
-
+    choices: List[Message]
 
 class PoeProvider:
     def __init__(
@@ -56,21 +52,20 @@ class PoeProvider:
         self.current_token_index = (self.current_token_index + 1) % len(self.POE_TOKENS)
         self.client.token = self._get_current_token()
 
-    async def chat_completion(self, messages:list, tokens: int = 0, max_retries=3):
+    async def instruct(self, messages: List[Message], tokens: int = 0, max_retries=3):
         for i in range(max_retries):
             try:
                 if self.AI_MODEL not in self.client.bot_names:
                     self.AI_MODEL = self.client.get_bot_by_codename(self.AI_MODEL)
-
-                responses = []
-                for msg in messages:
-                    print(f"Sending message: {msg}")
-                    response = self.client.send_message(
-                        chatbot=self.AI_MODEL, message=msg['content']
-                    )
-                    responses.append(response)
-                return responses
                 
+                # Get the last user message
+                last_user_message = [msg for msg in messages if msg.role == "user"][-1].content
+
+                for chunk in self.client.send_message(
+                    chatbot=self.AI_MODEL, message=last_user_message
+                ):
+                    pass
+                return {"role": "assistant", "content": chunk["text"]}
             except poe.exceptions.RateLimitError as e:  # Handle rate limit errors
                 logging.error(f"Rate limit error: {str(e)}")
                 self._rotate_token()
@@ -90,29 +85,25 @@ class PoeProvider:
             status_code=429, detail="Rate limit exceeded despite retries"
         )
 
-
 # Initialize PoeProvider here
 poe_provider = PoeProvider(
     POE_TOKENS=[
-        "token",
-        "token",
+        "tokengoeshere",
+        "tokengoeshere",
+        "tokengoeshere",
     ],
     AI_MODEL="chinchilla",
-    proxy="socks5://USER:PASS.SERVER:PORT",
+    proxy="socks5://user:pass@server:port",
 )
 
-
 @app.post("/v1/chat/completions", response_model=PoeResponse)
-async def generate_response(chat_request: ChatCompletionRequest):
+async def generate_response(request: Request, messages: Messages):
     try:
-        print(f"Received chat request: {chat_request}")
-        poe_provider.AI_MODEL = chat_request.model
-        response_text = await poe_provider.chat_completion(messages=[m.dict() for m in chat_request.messages])
-        return {"response": response_text}
+        response_message = await poe_provider.instruct(messages=messages.messages)
+        return JSONResponse(content={"choices": [response_message]})
     except Exception as e:
         logging.error(f"Error during response generation: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

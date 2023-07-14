@@ -10,7 +10,7 @@ This project is a FastAPI-based application that generates AI-generated response
 for this project:
 
 - [x] Token rotational (working but doesn't flip back in beginning the list after running out of tokens)
-- [ ] Add OPEN AI format of api like (/v1/chat/completions)
+- [x] Add OPEN AI format of api like (/v1/chat/completions)
 - [ ] Work on Stability so not overloaded easily
 
 
@@ -40,7 +40,7 @@ pip install -r requirements.txt
 ```
 
 3. Define Proxy and Tokens inside code
-
+(Proxy is required)
 if you don't define proxy you will have this error
 
 ```

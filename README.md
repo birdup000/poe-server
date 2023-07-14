@@ -48,29 +48,57 @@ tls_client.exceptions.TLSClientExeption: failed to build client out of request i
 ```
 
 
-4. Run the FastAPI server (locally):
+4. Running the FastAPI Server Locally
+
+You have two options for running the server: Using Python directly, or using Docker.
+
+#### **Option A: Python**
+
+To run the server with Python, execute the following command in your shell:
 
 ```shell
 python server.py
+```
 
+#### **Option B: Docker**
 
-or
+To run the server with Docker, you need to build and start the Docker container. Run the following commands:
 
+```shell
 docker-compose build
-
 docker-compose up
+```
 
+If you want the server to run in the background (daemonized), add the `-d` flag:
 
-for deamonized server run 
-
+```shell
 docker-compose up -d
 ```
 
-The server will start and listen on `http://localhost:8000`.
+After running these commands, the server will start and listen on the following URL:
 
-For accessing locally with docker access your local ip rather than localhost like http://192.168.0.45
+```
+http://localhost:8000
+```
 
-checking for local ip can be found with running ```ifconfig``` on Linux or Windows ```ipconfig```
+> **Note:** If you're accessing the server locally with Docker, use your local IP address instead of `localhost`. For example: `http://192.168.0.45`.
+
+#### **Finding Your Local IP Address**
+
+To find your local IP address, run the following command:
+
+- On Linux:
+
+    ```shell
+    ifconfig
+    ```
+
+- On Windows:
+
+    ```shell
+    ipconfig
+    ```
+
 
 ## API Endpoints
 

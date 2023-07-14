@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 def send_message(event=None):
-    url = "http://localhost:8000/generate-response"
+    url = "http://localhost:8000/v1/chat/completions"
     headers = {"Content-Type": "application/json"}
 
     user_input = entry_field.get()

@@ -48,13 +48,30 @@ tls_client.exceptions.TLSClientExeption: failed to build client out of request i
 ```
 
 
-4. Run the FastAPI server:
+4. Run the FastAPI server (locally):
 
 ```shell
 python server.py
 `
 
+or
+
+```shell
+docker-compose build
+
+docker-compose up
+`
+
+for deamonized server run 
+```shell
+docker-compose up -d
+`
+
 The server will start and listen on `http://localhost:8000`.
+
+For accessing locally with docker access your local ip rather than localhost like http://192.168.0.45
+
+checking for local ip can be found with running ```ifconfig``` on Linux or Windows ```ipconfig```
 
 ## API Endpoints
 

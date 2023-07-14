@@ -52,20 +52,19 @@ tls_client.exceptions.TLSClientExeption: failed to build client out of request i
 
 ```shell
 python server.py
-`
+
 
 or
 
-```shell
 docker-compose build
 
 docker-compose up
-`
+
 
 for deamonized server run 
-```shell
+
 docker-compose up -d
-`
+```
 
 The server will start and listen on `http://localhost:8000`.
 

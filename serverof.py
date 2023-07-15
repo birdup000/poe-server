@@ -3,7 +3,6 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import asyncio
 import uvicorn
-import time
 import logging
 from typing import List
 
@@ -40,6 +39,7 @@ class PoeProvider:
         **kwargs,
     ):
         self.POE_TOKENS = POE_TOKENS or []
+        self.bad_tokens = []
         self.AI_MODEL = AI_MODEL.lower()
         self.current_token_index = 0
         self.proxy = proxy
@@ -49,7 +49,13 @@ class PoeProvider:
         return self.POE_TOKENS[self.current_token_index]
 
     def _rotate_token(self):
+        if len(self.bad_tokens) == len(self.POE_TOKENS):
+            self.bad_tokens = []  # Reset the bad tokens list if all tokens have been marked as bad
+
         self.current_token_index = (self.current_token_index + 1) % len(self.POE_TOKENS)
+        while self._get_current_token() in self.bad_tokens:  # Skip over bad tokens
+            self.current_token_index = (self.current_token_index + 1) % len(self.POE_TOKENS)
+
         self.client.token = self._get_current_token()
 
     async def instruct(self, messages: List[Message], tokens: int = 0, max_retries=3):
@@ -66,43 +72,52 @@ class PoeProvider:
                 ):
                     pass
                 return {"role": "assistant", "content": chunk["text"]}
+
             except poe.exceptions.RateLimitError as e:  # Handle rate limit errors
                 logging.error(f"Rate limit error: {str(e)}")
                 self._rotate_token()
-                time.sleep(2**i)  # Exponential backoff
+                await asyncio.sleep(2**i)  # Exponential backoff
 
             except poe.exceptions.InvalidTokenError as e:  # Handle invalid token errors
                 logging.error(f"Invalid token error: {str(e)}")
+                self.bad_tokens.append(self._get_current_token())  # Mark the current token as bad
                 self._rotate_token()
-                time.sleep(2**i)  # Exponential backoff
+                await asyncio.sleep(2**i)  # Exponential backoff
 
             except Exception as e:  # Catch all other exceptions
                 logging.error(f"Unexpected error during instruction: {str(e)}")
                 self._rotate_token()
-                time.sleep(2**i)  # Exponential backoff
+                await asyncio.sleep(2**i)  # Exponential backoff
 
         raise HTTPException(
             status_code=429, detail="Rate limit exceeded despite retries"
         )
 
-# Initialize PoeProvider here
-poe_provider = PoeProvider(
-    POE_TOKENS=[
-        "tokengoeshere",
-        "tokengoeshere",
-        "tokengoeshere",
-    ],
-    AI_MODEL="chinchilla",
-    proxy="socks5://user:pass@server:port",
-)
+poe_provider = None
+
+@app.on_event("startup")
+async def startup_event():
+    global poe_provider
+    poe_provider = PoeProvider(
+        POE_TOKENS=[
+            "tokengoeshere",
+            "tokengoeshere",
+            "tokengoeshere",
+        ],
+        AI_MODEL="chinchilla",
+        proxy="socks5://user:pass@server:port",
+    )
 
 @app.post("/v1/chat/completions", response_model=PoeResponse)
 async def generate_response(request: Request, messages: Messages):
     try:
         response_message = await poe_provider.instruct(messages=messages.messages)
         return JSONResponse(content={"choices": [response_message]})
-    except Exception as e:
+    except HTTPException as e:
         logging.error(f"Error during response generation: {str(e)}")
+        raise e
+    except Exception as e:
+        logging.error(f"Unhandled exception: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

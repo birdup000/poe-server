@@ -67,11 +67,15 @@ class PoeProvider:
                 # Get the last user message
                 last_user_message = [msg for msg in messages if msg.role == "user"][-1].content
 
-                for chunk in self.client.send_message(
-                    chatbot=self.AI_MODEL, message=last_user_message
-                ):
-                    pass
-                return {"role": "assistant", "content": chunk["text"]}
+                if last_user_message.strip():  # Check if the message is not empty
+                    for chunk in self.client.send_message(
+                        chatbot=self.AI_MODEL, message=last_user_message
+                    ):
+                        pass
+                    return {"role": "assistant", "content": chunk["text"]}
+                else:
+                    logging.warning("Attempted to send an empty message, skipping.")
+                    return {"role": "assistant", "content": ""}
 
             except poe.exceptions.RateLimitError as e:  # Handle rate limit errors
                 logging.error(f"Rate limit error: {str(e)}")

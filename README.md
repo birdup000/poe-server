@@ -103,7 +103,7 @@ To find your local IP address, run the following command:
 ## API Endpoints
 
 ### Generate AI Response
-
+use the server.py for this type of request
 ```
 
 - **Endpoint**: `/generate-response`
@@ -125,6 +125,25 @@ To find your local IP address, run the following command:
         "response": "AI-generated response"
     }
     ```
+
+```
+You can make a request like this use the serverof.py to use this type request
+
+```
+import openai
+
+openai.api_key = "anyrandomstring"
+openai.api_base = "http://localhost:8000/v1"
+
+response = openai.ChatCompletion.create(
+    model='chinchilla',
+    messages=[
+        {'role': 'user', 'content': "Hello"},
+    ]
+)
+
+print(response)
+```
 
 ## Configuration
 

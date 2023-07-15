@@ -5,6 +5,7 @@ import asyncio
 import uvicorn
 import logging
 from typing import List
+import time
 
 try:
     import poe
@@ -25,6 +26,7 @@ class Message(BaseModel):
     content: str
 
 class Messages(BaseModel):
+    model: str = "chinchilla"
     messages: List[Message]
 
 class PoeResponse(BaseModel):
@@ -112,11 +114,29 @@ async def startup_event():
         proxy="socks5://user:pass@server:port",
     )
 
-@app.post("/v1/chat/completions", response_model=PoeResponse)
+@app.post("/v1/chat/completions")
 async def generate_response(request: Request, messages: Messages):
     try:
         response_message = await poe_provider.instruct(messages=messages.messages)
-        return JSONResponse(content={"choices": [response_message]})
+        return {
+            'id': 'chatcmpl-xyz',  # You'll need to generate a real unique ID here
+            'object': 'chat.completion',
+            'created': int(time.time()),
+            'model': messages.model,
+            'usage': {
+                'prompt_tokens': 10,  # Replace with actual counts
+                'completion_tokens': 10,  # Replace with actual counts
+                'total_tokens': 20,  # Replace with actual counts
+            },
+            'choices': [{
+                'message': {
+                    'role': 'assistant',
+                    'content': response_message['content']
+                },
+                'finish_reason': 'stop',
+                'index': 0
+            }]
+        }
     except HTTPException as e:
         logging.error(f"Error during response generation: {str(e)}")
         raise e

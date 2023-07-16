@@ -161,10 +161,10 @@ print(response)
 
 ## Configuration
 
-You can configure the project by providing the following environment variables:
+You can configure the project by providing the following environment variables (.env):
 
 - `POE_TOKENS`: A comma-separated list of Poe API tokens.
-- `AI_MODEL`: The codename of the AI model to use.
+- `PROXIES`: A comma-separated list of proxies.
 
 ## Contributing
 

@@ -85,7 +85,7 @@ After running these commands, the server will start and listen on the following 
 http://localhost:8000
 ```
 
-> **Note:** If you're accessing the server locally with Docker, use your local IP address instead of `localhost`. For example: `http://192.168.0.45`.
+> **Note:** If you're accessing the server locally with Docker, use your local IP address instead of `http://localhost:8000`. For example: `http://192.168.0.45:8000`.
 
 #### **Finding Your Local IP Address**
 

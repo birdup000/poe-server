@@ -34,6 +34,11 @@ class Messages(BaseModel):
     model: str = "chinchilla"
     messages: List[Message]
 
+class CompletionPayload(BaseModel):
+    prompt: str
+    max_tokens: int
+    temperature: float
+
 class PoeResponse(BaseModel):
     choices: List[Message]
 
@@ -116,7 +121,7 @@ async def startup_event():
     )
 
 @app.post("/v1/chat/completions")
-async def generate_response(request: Request, messages: Messages):
+async def generate_chat_response(request: Request, messages: Messages):
     try:
         response_message = await poe_provider.instruct(messages=messages.messages)
         return {
@@ -126,10 +131,34 @@ async def generate_response(request: Request, messages: Messages):
             'model': messages.model,
             'choices': [{
                 'message': {
-                    'role': 'assistant',
+                    'role': 'assistant' or 'system',
                     'content': response_message['content']
                 },
                 'finish_reason': 'stop',
+                'index': 0
+            }]
+        }
+    except HTTPException as e:
+        logging.error(f"Error during response generation: {str(e)}")
+        raise e
+    except Exception as e:
+        logging.error(f"Unhandled exception: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/v1/engines/chinchilla/completions")
+async def generate_completion(request: Request, payload: CompletionPayload):
+    messages = [
+        Message(role="user", content=payload.prompt)
+    ]
+    try:
+        response_message = await poe_provider.instruct(messages=messages)
+        return {
+            'id': 'chatcmpl-xyz',  # You'll need to generate a real unique ID here
+            'object': 'text.completion',
+            'created': int(time.time()),
+            'model': 'chinchilla',
+            'choices': [{
+                'text': response_message['content'],
                 'index': 0
             }]
         }

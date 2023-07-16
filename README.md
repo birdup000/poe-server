@@ -39,7 +39,7 @@ cd poe-server
 pip install -r requirements.txt
 ```
 
-3. Define Proxy and Tokens inside code
+3. Define Proxy and Tokens inside the .env file
 (Proxy is required)
 if you don't define proxy you will have this error
 

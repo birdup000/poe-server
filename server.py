@@ -5,6 +5,11 @@ import asyncio
 import uvicorn
 import time
 import logging
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 try:
     import poe
@@ -83,13 +88,9 @@ class PoeProvider:
 
 # Initialize PoeProvider here
 poe_provider = PoeProvider(
-    POE_TOKENS=[
-        "tokengoeshere",
-        "tokengoeshere",
-        "tokengoeshere",
-    ],
+    POE_TOKENS=os.getenv("POE_TOKENS").split(","),
     AI_MODEL="chinchilla",
-    proxy="socks5://user:pass@server:port",
+    proxy=os.getenv("PROXY"),
 )
 
 

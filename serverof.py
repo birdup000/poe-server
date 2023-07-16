@@ -6,6 +6,11 @@ import uvicorn
 import logging
 from typing import List
 import time
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 try:
     import poe
@@ -105,13 +110,9 @@ poe_provider = None
 async def startup_event():
     global poe_provider
     poe_provider = PoeProvider(
-        POE_TOKENS=[
-            "tokengoeshere",
-            "tokengoeshere",
-            "tokengoeshere",
-        ],
+        POE_TOKENS=os.getenv("POE_TOKENS").split(","),
         AI_MODEL="chinchilla",
-        proxy="socks5://user:pass@server:port",
+        proxy=os.getenv("PROXY"),
     )
 
 @app.post("/v1/chat/completions")
@@ -123,11 +124,6 @@ async def generate_response(request: Request, messages: Messages):
             'object': 'chat.completion',
             'created': int(time.time()),
             'model': messages.model,
-            'usage': {
-                'prompt_tokens': 10,  # Replace with actual counts
-                'completion_tokens': 10,  # Replace with actual counts
-                'total_tokens': 20,  # Replace with actual counts
-            },
             'choices': [{
                 'message': {
                     'role': 'assistant',

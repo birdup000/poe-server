@@ -1,6 +1,6 @@
 # Poe Server
 
-This project is a FastAPI-based application that generates AI-generated responses using the Poe API.
+This project is a FastAPI-based application that generates AI-generated responses using the Poe API (https://github.com/ading2210/poe-api).
 
 
 
@@ -10,7 +10,7 @@ This project is a FastAPI-based application that generates AI-generated response
 for this project:
 
 - [x] Token rotational (working but doesn't flip back in beginning the list after running out of tokens)
-- [x] Add OPEN AI format of api like (/v1/chat/completions)
+- [x] Add OPEN AI format of api like (/v1/chat/completions) use serverof.py for this.
 - [ ] Work on Stability so not overloaded easily
 
 
@@ -43,9 +43,13 @@ pip install -r requirements.txt
 (Proxy is required)
 if you don't define proxy you will have this error
 
+Please follow this issue page to add proxy
+
 ```
 tls_client.exceptions.TLSClientExeption: failed to build client out of request input: parse "socks5://user:pass@server:port": invalid port ":port" after host
 ```
+
+[Proxy instructions]  https://github.com/greengeckowizard/poe-server/issues/3
 
 
 4. Running the FastAPI Server Locally
@@ -64,6 +68,8 @@ python server.py
 
 To run the server with Docker, you need to build and start the Docker container. Run the following commands:
 
+To change between using serverof (OpenAI format) change the line in the Dockerfile from serverof in this CMD ```["uvicorn", "serverof:app", "--host", "0.0.0.0", "--port", "8000"]``` to ```CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]``` then rebuild the dockerfile and you can docker-compose up. For running in Daemon mode use -d flag ``` docker-compose up -d ```
+
 ```shell
 docker-compose build
 docker-compose up
@@ -80,9 +86,7 @@ After running these commands, the server will start and listen on the following 
 ```
 http://localhost:8000
 ```
-
-> **Note:** If you're accessing the server locally with Docker, use your local IP address instead of `localhost`. For example: `http://192.168.0.45`.
-
+> **Important:** When interacting with the server locally via Docker, it's recommended to use the IP address assigned to your device instead of `http://localhost:8000`. For instance, if your local device's IP is `192.168.0.45`, the appropriate address to use would be `http://192.168.0.45:8000`.
 #### **Finding Your Local IP Address**
 
 To find your local IP address, run the following command:
@@ -98,6 +102,16 @@ To find your local IP address, run the following command:
     ```shell
     ipconfig
     ```
+
+- On MacOS:
+
+    ```shell
+    ifconfig | grep "inet " | grep -v 127.0.0.1
+    ```
+
+This command will display a list of all network interfaces. The `grep "inet "` command filters this list to include only entries that have an IP address (inet stands for internet). The second `grep -v 127.0.0.1` command excludes the loopback address, which is typically 127.0.0.1. The IP address you're likely interested in will most likely be the one associated with `en0` or `en1` - these are usually the primary Ethernet and Wi-Fi interfaces, respectively.
+
+Remember, IP addresses that start with 192.168 or 10.0 are local addresses - they're only valid on your local network. If you're trying to give someone your IP address to connect to over the internet, you'll need your public IP address, which you can find by searching 'what is my IP' on Google or any other search engine.
 
 
 ## API Endpoints
@@ -166,4 +180,5 @@ If you want to contribute to this project, please follow these steps:
 
 ## License
 
-See the [LICENSE](LICENSE) file for details.
+This project uses the [GNU General Public License v3.0]
+see the [LICENSE](LICENSE) file for details.

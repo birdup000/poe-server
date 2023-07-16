@@ -85,7 +85,6 @@ After running these commands, the server will start and listen on the following 
 http://localhost:8000
 ```
 > **Important:** When interacting with the server locally via Docker, it's recommended to use the IP address assigned to your device instead of `http://localhost:8000`. For instance, if your local device's IP is `192.168.0.45`, the appropriate address to use would be `http://192.168.0.45:8000`.
-
 #### **Finding Your Local IP Address**
 
 To find your local IP address, run the following command:
@@ -101,6 +100,16 @@ To find your local IP address, run the following command:
     ```shell
     ipconfig
     ```
+
+- On MacOS:
+
+    ```shell
+    ifconfig | grep "inet " | grep -v 127.0.0.1
+    ```
+
+This command will display a list of all network interfaces. The `grep "inet "` command filters this list to include only entries that have an IP address (inet stands for internet). The second `grep -v 127.0.0.1` command excludes the loopback address, which is typically 127.0.0.1. The IP address you're likely interested in will most likely be the one associated with `en0` or `en1` - these are usually the primary Ethernet and Wi-Fi interfaces, respectively.
+
+Remember, IP addresses that start with 192.168 or 10.0 are local addresses - they're only valid on your local network. If you're trying to give someone your IP address to connect to over the internet, you'll need your public IP address, which you can find by searching 'what is my IP' on Google or any other search engine.
 
 
 ## API Endpoints

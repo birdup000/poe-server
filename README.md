@@ -178,4 +178,5 @@ If you want to contribute to this project, please follow these steps:
 
 ## License
 
-See the [LICENSE](LICENSE) file for details.
+This project uses the [GNU General Public License v3.0]
+see the [LICENSE](LICENSE) file for details.

@@ -9,7 +9,7 @@ This project is a FastAPI-based application that generates AI-generated response
 
 for this project:
 
-- [x] Token rotational (working but doesn't flip back in beginning the list after running out of tokens)
+- [x] Token rotational
 - [x] Add OPEN AI format of api like (/v1/chat/completions) use serverof.py for this.
 - [ ] Work on Stability so not overloaded easily
 

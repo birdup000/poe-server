@@ -68,6 +68,8 @@ python server.py
 
 To run the server with Docker, you need to build and start the Docker container. Run the following commands:
 
+To change between using serverof (OpenAI format) change the line in the Dockerfile from serverof in this CMD ```["uvicorn", "serverof:app", "--host", "0.0.0.0", "--port", "8000"]``` to ```CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]``` then rebuild the dockerfile and you can docker-compose up. For running in Daemon mode use -d flag ``` docker-compose up -d ```
+
 ```shell
 docker-compose build
 docker-compose up

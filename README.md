@@ -12,7 +12,7 @@ for this project:
 - [x] Token rotational
 - [x] Add OPEN AI format of api like (/v1/chat/completions) use serverof.py for this.
 - [x] Work on Stability so not overloaded easily (rate limiting added)
-
+- [ ] Add Embeddings to OPEN AI format 
 
 
 

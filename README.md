@@ -10,7 +10,7 @@ This project is a FastAPI-based application that generates AI-generated response
 for this project:
 
 - [x] Token rotational (working but doesn't flip back in beginning the list after running out of tokens)
-- [x] Add OPEN AI format of api like (/v1/chat/completions)
+- [x] Add OPEN AI format of api like (/v1/chat/completions) use serverof.py for this.
 - [ ] Work on Stability so not overloaded easily
 
 
@@ -42,6 +42,10 @@ pip install -r requirements.txt
 3. Define Proxy and Tokens inside code
 (Proxy is required)
 if you don't define proxy you will have this error
+
+Please follow this issue page to add proxy
+
+https://github.com/greengeckowizard/poe-server/issues/3
 
 ```
 tls_client.exceptions.TLSClientExeption: failed to build client out of request input: parse "socks5://user:pass@server:port": invalid port ":port" after host

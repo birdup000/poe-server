@@ -46,19 +46,23 @@ class PoeProvider:
     def __init__(
         self,
         POE_TOKENS: list = None,
+        PROXIES: list = None,
         AI_MODEL: str = "chinchilla",
-        proxy: str = None,
         **kwargs,
     ):
         self.POE_TOKENS = POE_TOKENS or []
+        self.PROXIES = PROXIES or []
         self.bad_tokens = []
         self.AI_MODEL = AI_MODEL.lower()
         self.current_token_index = 0
-        self.proxy = proxy
-        self.client = poe.Client(token=self._get_current_token(), proxy=self.proxy)
+        self.current_proxy_index = 0
+        self.client = poe.Client(token=self._get_current_token(), proxy=self._get_current_proxy())
 
     def _get_current_token(self):
         return self.POE_TOKENS[self.current_token_index]
+
+    def _get_current_proxy(self):
+        return self.PROXIES[self.current_proxy_index]
 
     def _rotate_token(self):
         if len(self.bad_tokens) == len(self.POE_TOKENS):
@@ -70,13 +74,18 @@ class PoeProvider:
 
         self.client.token = self._get_current_token()
 
+    def _rotate_proxy(self):
+        self.current_proxy_index = (self.current_proxy_index + 1) % len(self.PROXIES)
+        self.client.proxy = self._get_current_proxy()
+
     async def instruct(self, messages: List[Message], tokens: int = 0, max_retries=3):
         for i in range(max_retries):
             try:
+                self._rotate_proxy()  # Rotate the proxy for every request
+
                 if self.AI_MODEL not in self.client.bot_names:
                     self.AI_MODEL = self.client.get_bot_by_codename(self.AI_MODEL)
                 
-                # Get the last user message
                 last_user_message = [msg for msg in messages if msg.role == "user"][-1].content
 
                 if last_user_message.strip():  # Check if the message is not empty
@@ -116,8 +125,8 @@ async def startup_event():
     global poe_provider
     poe_provider = PoeProvider(
         POE_TOKENS=os.getenv("POE_TOKENS").split(","),
+        PROXIES=os.getenv("PROXIES").split(","),
         AI_MODEL="chinchilla",
-        proxy=os.getenv("PROXY"),
     )
 
 @app.post("/v1/chat/completions")

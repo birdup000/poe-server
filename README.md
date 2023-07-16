@@ -45,11 +45,11 @@ if you don't define proxy you will have this error
 
 Please follow this issue page to add proxy
 
-https://github.com/greengeckowizard/poe-server/issues/3
-
 ```
 tls_client.exceptions.TLSClientExeption: failed to build client out of request input: parse "socks5://user:pass@server:port": invalid port ":port" after host
 ```
+
+[Proxy instructions]  https://github.com/greengeckowizard/poe-server/issues/3
 
 
 4. Running the FastAPI Server Locally

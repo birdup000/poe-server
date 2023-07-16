@@ -1,6 +1,6 @@
 # Poe Server
 
-This project is a FastAPI-based application that generates AI-generated responses using the Poe API.
+This project is a FastAPI-based application that generates AI-generated responses using the Poe API (https://github.com/ading2210/poe-api).
 
 
 

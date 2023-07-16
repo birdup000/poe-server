@@ -2,4 +2,4 @@ fastapi
 uvicorn
 pydantic
 poe-api
-dotenv
+python-dotenv

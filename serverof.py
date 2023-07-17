@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+
 from pydantic import BaseModel
 import asyncio
 import uvicorn
@@ -10,6 +11,8 @@ import time
 import os
 from dotenv import load_dotenv
 import json
+import random
+import string
 
 # Load environment variables
 load_dotenv()
@@ -29,7 +32,7 @@ logging.basicConfig(filename="app.log", level=logging.INFO)
 app = FastAPI()
 
 origins = [
-    "http://localhost:8000",  
+    "https://localhost",  
     "https://bettergpt.chat",
 ]
 
@@ -41,18 +44,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+MODEL_MAPPING = {
+    "sage": "capybara",
+    "claude-instant": "a2",
+    "claude-2-100k": "a2_2",
+    "claude-instant-100k": "a2_100k",
+    "gpt-3.5-turbo-0613": "chinchilla",
+    "gpt-3.5-turbo": "chinchilla",
+    "gpt-3.5-turbo-16k-0613": "agouti",
+    "gpt-3.5-turbo-16k": "agouti",
+    "gpt-4": "beaver",
+    "gpt-4-0613": "beaver",
+    "gpt-4-32k": "vizcacha",
+    "chat-bison-001": "acouchy",
+}
+
 class Message(BaseModel):
     role: str
     content: str
 
+# Add stream parameter to your Messages model
 class Messages(BaseModel):
-    model: str 
+    model: str
     messages: List[Message]
+    stream: Optional[bool] = False  # By default, it's set to False
 
 class CompletionPayload(BaseModel):
     prompt: str
     max_tokens: int
     temperature: float
+    presence_penalty: int
+    top_p: int
 
 class PoeResponse(BaseModel):
     choices: List[Message]
@@ -72,6 +94,12 @@ class PoeProvider:
         self.current_token_index = 0
         self.current_proxy_index = 0
         self.client = poe.Client(token=self._get_current_token(), proxy=self._get_current_proxy())
+
+    def set_model(self, model: str):
+        if model in MODEL_MAPPING:
+            self.AI_MODEL = MODEL_MAPPING[model]
+        else:
+            self.AI_MODEL = model
 
     def _get_current_token(self):
         return self.POE_TOKENS[self.current_token_index]
@@ -124,22 +152,63 @@ class PoeProvider:
 
 poe_provider = None
 
+def generate_id():
+    characters = string.ascii_letters + string.digits  # this includes both lower and uppercase letters and digits
+    random_part = ''.join(random.choice(characters) for _ in range(29))  # generate a string of 29 random characters
+    return f"chatcmpl-{random_part}"
+
 @app.on_event("startup")
 async def startup_event():
     global poe_provider
     poe_provider = PoeProvider(
         POE_TOKENS=os.getenv("POE_TOKENS").split(","),
         PROXIES=os.getenv("PROXIES").split(","),
-        AI_MODEL="chinchilla",
+        AI_MODEL="vizcacha",
     )
 
-# This is a generator function that yields data in chunks
 async def stream_response(data):
     if isinstance(data, dict):
-        yield json.dumps(data)
+        first_chunk = True
+        words = data['choices'][0]['message']['content'].split()
+        for i in range(len(words)):
+            word = words[i] + ' ' if i != len(words) - 1 else words[i]
+            chunk = {
+                'id': data['id'],
+                'object': data['object'],
+                'created': data['created'],
+                'model': data['model'],
+                'choices': [
+                    {
+                        'index': data['choices'][0]['index'],
+                        'delta': {'role': 'assistant', 'content': word} if first_chunk else {'content': word},
+                        'finish_reason': None
+                    }
+                ]
+            }
+            yield f'data: {json.dumps(chunk)}\n\n'
+            if first_chunk:
+                first_chunk = False
+        
+        # Add a final chunk to signify completion
+        done_chunk = {
+            'id': data['id'],
+            'object': data['object'],
+            'created': data['created'],
+            'model': data['model'],
+            'choices': [
+                {
+                    'index': data['choices'][0]['index'],
+                    'delta': {},
+                    'finish_reason': 'stop'
+                }
+            ]
+        }
+        yield f'data: {json.dumps(done_chunk)}\n\n'
+        yield 'data: [DONE]\n\n'
     else:
         for chunk in data:
-            yield json.dumps(chunk)
+            yield f'data: {json.dumps(chunk)}\n\n'
+        yield 'data: [DONE]\n\n'
 
 
 @app.post("/v1/chat/completions", status_code=status.HTTP_200_OK)
@@ -151,27 +220,35 @@ async def generate_chat_response(request: Request):
         # Validate the input data
         messages = Messages(**messages)
 
+        # Set the model in the provider
+        poe_provider.set_model(messages.model)
+
         # Generate the response
         response_message = await poe_provider.instruct(messages=messages.messages)
 
         response_data = {
-            'id': 'chatcmpl-xyz',  # You'll need to generate a real unique ID here
+            'id': generate_id(),
             'object': 'chat.completion',
             'created': int(time.time()),
-            'model': messages.model,  # This will be the model passed from the request
-            'choices': [{
-                'message': {
-                    'role': 'assistant',
-                    'content': response_message['content']
-                },
-                'finish_reason': 'stop',
-                'index': 0,
-                'delta': 0
-            }]
+            'model': messages.model,
+            'choices': [
+                {
+                    'index': 0,
+                    'message': {
+                        'role': 'assistant',
+                        'content': response_message['content']
+                    },
+                    'finish_reason': 'stop'
+                }
+            ]
         }
 
-        # Use the stream_response function to send the data in chunks
-        return StreamingResponse(stream_response(response_data), media_type='application/json')
+        # Use the stream_response function to send the data in chunks if streaming is enabled
+        if messages.stream:
+            response_data['object'] = 'chat.completion.chunk'
+            return StreamingResponse(stream_response(response_data), media_type='text/event-stream')
+        else:
+            return response_data
 
     except HTTPException as e:
         logging.error(f"Error during response generation: {str(e)}")
@@ -187,16 +264,19 @@ async def generate_completion(request: Request, model: str, payload: CompletionP
         Message(role="user", content=payload.prompt)
     ]
     try:
+        # Set the model in the provider
+        poe_provider.set_model(model)
+
         response_message = await poe_provider.instruct(messages=messages)
+
         return {
-            'id': 'chatcmpl-xyz',  # You'll need to generate a real unique ID here
+            'id': generate_id(),
             'object': 'text.completion',
             'created': int(time.time()),
             'model': model,
             'choices': [{
                 'text': response_message['content'],
-                'index': 0,
-                'delta': 0
+                'index': 0
             }]
         }
     except HTTPException as e:

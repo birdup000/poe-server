@@ -93,7 +93,8 @@ class PoeProvider:
         self.AI_MODEL = AI_MODEL.lower()
         self.current_token_index = 0
         self.current_proxy_index = 0
-        self.client = poe.Client(token=self._get_current_token(), proxy=self._get_current_proxy())
+        self.client = None
+        self._rotate_token()  # Rotate the token during initialization
 
     def set_model(self, model: str):
         if model in MODEL_MAPPING:
@@ -115,13 +116,13 @@ class PoeProvider:
         while self._get_current_token() in self.bad_tokens:  # Skip over bad tokens
             self.current_token_index = (self.current_token_index + 1) % len(self.POE_TOKENS)
 
-        self.client.token = self._get_current_token()
+        self.client = poe.Client(token=self._get_current_token(), proxy=self._get_current_proxy())
 
     def _rotate_proxy(self):
         self.current_proxy_index = (self.current_proxy_index + 1) % len(self.PROXIES)
         self.client.proxy = self._get_current_proxy()
 
-    async def instruct(self, messages: List[Message], tokens: int = 0, max_retries=3):
+    async def instruct(self, messages: List[Message], max_retries=3):
         for i in range(max_retries):
             try:
                 self._rotate_proxy()  # Rotate the proxy for every request
@@ -143,6 +144,7 @@ class PoeProvider:
                 
             except Exception as e:  # Catch all other exceptions
                 logging.error(f"Unexpected error during instruction: {str(e)}")
+                self.bad_tokens.append(self._get_current_token())  # Mark the current token as bad
                 self._rotate_token()
                 await asyncio.sleep(2**i)  # Exponential backoff
 

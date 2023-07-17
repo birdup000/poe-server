@@ -1,13 +1,15 @@
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import asyncio
 import uvicorn
 import logging
-from typing import List
+from typing import List, Optional
 import time
 import os
 from dotenv import load_dotenv
+import json
 
 # Load environment variables
 load_dotenv()
@@ -26,12 +28,25 @@ logging.basicConfig(filename="app.log", level=logging.INFO)
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:8000",  
+    "https://bettergpt.chat",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True, 
+    allow_methods=["*"], 
+    allow_headers=["*"],
+)
+
 class Message(BaseModel):
     role: str
     content: str
 
 class Messages(BaseModel):
-    model: str = "chinchilla"
+    model: str 
     messages: List[Message]
 
 class CompletionPayload(BaseModel):
@@ -97,18 +112,7 @@ class PoeProvider:
                 else:
                     logging.warning("Attempted to send an empty message, skipping.")
                     return {"role": "assistant", "content": ""}
-
-            except poe.exceptions.RateLimitError as e:  # Handle rate limit errors
-                logging.error(f"Rate limit error: {str(e)}")
-                self._rotate_token()
-                await asyncio.sleep(2**i)  # Exponential backoff
-
-            except poe.exceptions.InvalidTokenError as e:  # Handle invalid token errors
-                logging.error(f"Invalid token error: {str(e)}")
-                self.bad_tokens.append(self._get_current_token())  # Mark the current token as bad
-                self._rotate_token()
-                await asyncio.sleep(2**i)  # Exponential backoff
-
+                
             except Exception as e:  # Catch all other exceptions
                 logging.error(f"Unexpected error during instruction: {str(e)}")
                 self._rotate_token()
@@ -129,24 +133,46 @@ async def startup_event():
         AI_MODEL="chinchilla",
     )
 
-@app.post("/v1/chat/completions")
-async def generate_chat_response(request: Request, messages: Messages):
+# This is a generator function that yields data in chunks
+async def stream_response(data):
+    if isinstance(data, dict):
+        yield json.dumps(data)
+    else:
+        for chunk in data:
+            yield json.dumps(chunk)
+
+
+@app.post("/v1/chat/completions", status_code=status.HTTP_200_OK)
+async def generate_chat_response(request: Request):
     try:
+        # Parse the incoming stream as JSON
+        messages = await request.json()
+
+        # Validate the input data
+        messages = Messages(**messages)
+
+        # Generate the response
         response_message = await poe_provider.instruct(messages=messages.messages)
-        return {
+
+        response_data = {
             'id': 'chatcmpl-xyz',  # You'll need to generate a real unique ID here
             'object': 'chat.completion',
             'created': int(time.time()),
-            'model': messages.model,
+            'model': messages.model,  # This will be the model passed from the request
             'choices': [{
                 'message': {
-                    'role': 'assistant' or 'system',
+                    'role': 'assistant',
                     'content': response_message['content']
                 },
                 'finish_reason': 'stop',
-                'index': 0
+                'index': 0,
+                'delta': 0
             }]
         }
+
+        # Use the stream_response function to send the data in chunks
+        return StreamingResponse(stream_response(response_data), media_type='application/json')
+
     except HTTPException as e:
         logging.error(f"Error during response generation: {str(e)}")
         raise e
@@ -154,8 +180,9 @@ async def generate_chat_response(request: Request, messages: Messages):
         logging.error(f"Unhandled exception: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/v1/engines/chinchilla/completions")
-async def generate_completion(request: Request, payload: CompletionPayload):
+
+@app.post("/v1/engines/{model}/completions", status_code=status.HTTP_200_OK, response_class=StreamingResponse)
+async def generate_completion(request: Request, model: str, payload: CompletionPayload):
     messages = [
         Message(role="user", content=payload.prompt)
     ]
@@ -165,10 +192,11 @@ async def generate_completion(request: Request, payload: CompletionPayload):
             'id': 'chatcmpl-xyz',  # You'll need to generate a real unique ID here
             'object': 'text.completion',
             'created': int(time.time()),
-            'model': 'chinchilla',
+            'model': model,
             'choices': [{
                 'text': response_message['content'],
-                'index': 0
+                'index': 0,
+                'delta': 0
             }]
         }
     except HTTPException as e:

@@ -7,12 +7,15 @@ This project is a FastAPI-based application that generates AI-generated response
 
 ## Project To-Do List
 
-for this project:
-
 - [x] Token rotational
-- [x] Add OPEN AI format of api like (/v1/chat/completions) use serverof.py for this.
+- [x] Proxy rotational
+- [x] Add Streaming Support and make it compatible with Bettergpt.chat (Much thanks PaniniCo!!)
+- [x] Add OPEN AI format of api like (/v1/chat/completions) use serverof.py for this
 - [x] Work on Stability so not overloaded easily (rate limiting added)
-- [ ] Add Embeddings to OPEN AI format 
+- [ ] Add a retry logic if a model has reached daily limit
+- [ ] Add Anse Support (https://github.com/anse-app/anse)
+- [ ] Add One-Api Support (https://github.com/songquanpeng/one-api)
+- [ ] Add Embeddings to OPEN AI format (/api/v1/embedding)
 
 
 
@@ -186,4 +189,4 @@ see the [LICENSE](LICENSE) file for details.
 
 ## Credits
 
-Thank you to PaniniCo for adding streaming support and model corresponding to name!!
+Thank you to PaniniCo for adding streaming support and model corresponding to names to Poe Models!!

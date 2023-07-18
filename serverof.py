@@ -85,6 +85,7 @@ class PoeProvider:
         POE_TOKENS: list = None,
         PROXIES: list = None,
         AI_MODEL: str = "chinchilla",
+        MAX_CONCURRENT_REQUESTS: int = 100,  # Set your limit here
         **kwargs,
     ):
         self.POE_TOKENS = POE_TOKENS or []
@@ -94,6 +95,7 @@ class PoeProvider:
         self.current_token_index = 0
         self.current_proxy_index = 0
         self.current_client_index = 0
+        self.semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)  # Create the Semaphore
 
         # Create a list of poe.Client instances
         self.clients = [poe.Client(token=token, proxy=proxy) for token, proxy in zip(self.POE_TOKENS, self.PROXIES)]
@@ -128,37 +130,40 @@ class PoeProvider:
         self.current_proxy_index = (self.current_proxy_index + 1) % len(self.PROXIES)
 
     async def instruct(self, messages: List[Message], tokens: int = 0, max_retries=3):
-        for i in range(max_retries):
-            try:
-                self._rotate_proxy()  # Rotate the proxy for every request
+        async with self.semaphore:  # Use the Semaphore here
+            for i in range(max_retries):
+                try:
+                    self._rotate_proxy()  # Rotate the proxy for every request
 
-                client = self._get_current_client()
-                if self.AI_MODEL not in client.bot_names:
-                    self.AI_MODEL = client.get_bot_by_codename(self.AI_MODEL)
-                
-                last_user_message = [msg for msg in messages if msg.role == "user"][-1].content
+                    client = self._get_current_client()
+                    if self.AI_MODEL not in client.bot_names:
+                        self.AI_MODEL = client.get_bot_by_codename(self.AI_MODEL)
+                    
+                    last_user_message = [msg for msg in messages if msg.role == "user"][-1].content
 
-                if last_user_message.strip():  # Check if the message is not empty
-                    for chunk in client.send_message(
-                        chatbot=self.AI_MODEL, message=last_user_message
-                    ):
-                        pass
-                    self._rotate_client()  # Rotate to the next client for the next request
-                    return {"role": "assistant", "content": chunk["text"]}
-                else:
-                    logging.warning("Attempted to send an empty message, skipping.")
-                    return {"role": "assistant", "content": ""}
-                
-            except Exception as e:  # Catch all other exceptions
-                logging.error(f"Unexpected error during instruction: {str(e)}")
-                self._rotate_token()
-                await asyncio.sleep(2**i)  # Exponential backoff
+                    if last_user_message.strip():  # Check if the message is not empty
+                        for chunk in client.send_message(
+                            chatbot=self.AI_MODEL, message=last_user_message
+                        ):
+                            pass
+                        self._rotate_client()  # Rotate to the next client for the next request
+                        return {"role": "assistant", "content": chunk["text"]}
+                    else:
+                        logging.warning("Attempted to send an empty message, skipping.")
+                        return {"role": "assistant", "content": ""}
+                    
+                except Exception as e:  # Catch all other exceptions
+                    logging.error(f"Unexpected error during instruction: {str(e)}")
+                    self._rotate_token()
+                    await asyncio.sleep(2**i)  # Exponential backoff
 
-        raise HTTPException(
-            status_code=429, detail="Rate limit exceeded despite retries"
-        )
+            raise HTTPException(
+                status_code=429, detail="Rate limit exceeded despite retries"
+            )
+
 
 poe_provider = None
+
 
 def generate_id():
     characters = string.ascii_letters + string.digits  # this includes both lower and uppercase letters and digits
@@ -172,6 +177,7 @@ async def startup_event():
         POE_TOKENS=os.getenv("POE_TOKENS").split(","),
         PROXIES=os.getenv("PROXIES").split(","),
         AI_MODEL="vizcacha",
+        MAX_CONCURRENT_REQUESTS=50  # Set your limit here
     )
 
 async def stream_response(data):

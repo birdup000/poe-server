@@ -12,7 +12,7 @@ This project is a FastAPI-based application that generates AI-generated response
 - [x] Add Streaming Support and make it compatible with Bettergpt.chat (Much thanks PaniniCo!!)
 - [x] Add OPEN AI format of api like (/v1/chat/completions) use serverof.py for this
 - [x] Work on Stability so not overloaded easily (rate limiting added)
-- [ ] Add a retry logic if a model has reached daily limit
+- [ ] Add a retry logic and switch to a different token if a model has reached daily limit
 - [ ] Add Anse Support (https://github.com/anse-app/anse)
 - [ ] Add One-Api Support (https://github.com/songquanpeng/one-api)
 - [ ] Add Embeddings to OPEN AI format (/api/v1/embedding)

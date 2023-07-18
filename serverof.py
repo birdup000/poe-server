@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-
+from hypercorn.config import Config
+from hypercorn.asyncio import serve
 from pydantic import BaseModel
 import asyncio
-import uvicorn
 import logging
 from typing import List, Optional
 import time
@@ -326,4 +326,6 @@ async def generate_completion(request: Request, model: str, payload: CompletionP
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    config = Config()
+    config.bind = ["0.0.0.0:8000"]  # The IP and port to bind to
+    asyncio.run(serve(app, config))

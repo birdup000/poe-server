@@ -1,10 +1,12 @@
+# Description: Server for the Better GPT chat app
+from hypercorn.config import Config
+from hypercorn.asyncio import serve
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from hypercorn.config import Config
-from hypercorn.asyncio import serve
 from pydantic import BaseModel
 import asyncio
+import hypercorn
 import logging
 from typing import List, Optional
 import time
@@ -90,7 +92,6 @@ class PoeProvider:
         POE_TOKENS: list = None,
         PROXIES: list = None,
         AI_MODEL: str = "chinchilla",
-        MAX_CONCURRENT_REQUESTS: int = 100,  # Set your limit here
         **kwargs,
     ):
         self.POE_TOKENS = POE_TOKENS or []
@@ -99,14 +100,19 @@ class PoeProvider:
         self.AI_MODEL = AI_MODEL.lower()
         self.current_token_index = 0
         self.current_proxy_index = 0
-        self.semaphore = asyncio.Semaphore(
-            MAX_CONCURRENT_REQUESTS
-        )  # Create the Semaphore
+        self.current_client_index = 0
 
-        # Create a single poe.Client instance
-        self.client = poe.Client(
-            token=self._get_current_token(), proxy=self._get_current_proxy()
-        )
+        # Create a list of poe.Client instances
+        self.clients = [
+            poe.Client(token=token, proxy=proxy)
+            for token, proxy in zip(self.POE_TOKENS, self.PROXIES)
+        ]
+
+    def _get_current_client(self):
+        return self.clients[self.current_client_index]
+
+    def _rotate_client(self):
+        self.current_client_index = (self.current_client_index + 1) % len(self.clients)
 
     def set_model(self, model: str):
         if model in MODEL_MAPPING:
@@ -120,16 +126,7 @@ class PoeProvider:
     def _get_current_proxy(self):
         return self.PROXIES[self.current_proxy_index]
 
-    def get_current_proxy(self):
-        return self.PROXIES[self.current_proxy_index]
-
     def _rotate_token(self):
-        if len(self.bad_tokens) == len(self.POE_TOKENS):
-            self.bad_tokens = (
-                []
-            )  # Reset the bad tokens list if all tokens have been marked as bad
-
-    def rotate_token(self):
         if len(self.bad_tokens) == len(self.POE_TOKENS):
             self.bad_tokens = (
                 []
@@ -141,59 +138,41 @@ class PoeProvider:
                 self.POE_TOKENS
             )
 
-        self.client.token = self._get_current_token()  # Update the client's token
-
     def _rotate_proxy(self):
         self.current_proxy_index = (self.current_proxy_index + 1) % len(self.PROXIES)
-        self.client.proxy = self._get_current_proxy()  # Update the client's proxy
-
-    def rotate_proxy(self):
-        self.current_proxy_index = (self.current_proxy_index + 1) % len(self.PROXIES)
-        self.client.proxy = self._get_current_proxy()  # Update the client's proxy
 
     async def instruct(self, messages: List[Message], tokens: int = 0, max_retries=3):
-        async with self.semaphore:  # Use the Semaphore here
-            for i in range(max_retries):
-                try:
-                    self._rotate_proxy()  # Rotate the proxy for every request
-
-                    if self.AI_MODEL not in self.client.bot_names:
-                        self.AI_MODEL = self.client.get_bot_by_codename(self.AI_MODEL)
-
-                    last_user_message = [msg for msg in messages if msg.role == "user"][
-                        -1
-                    ].content
-
-                    if last_user_message.strip():  # Check if the message is not empty
-                        for chunk in self.client.send_message(
-                            chatbot=self.AI_MODEL, message=last_user_message
-                        ):
-                            pass
-                        return {"role": "assistant", "content": chunk["text"]}
-                    else:
-                        logging.warning("Attempted to send an empty message, skipping.")
-                        return {"role": "assistant", "content": ""}
-
-                except Exception as e:  # Catch all other exceptions
-                    logging.error(f"Unexpected error during instruction: {str(e)}")
-                    self._rotate_token()
-                    await asyncio.sleep(2**i)  # Exponential backoff
-
-            raise HTTPException(
-                status_code=429, detail="Rate limit exceeded despite retries"
-            )
-
-    async def test_tokens(self):
-        """Test all tokens by making a simple request."""
-        for idx, token in enumerate(self.POE_TOKENS):
-            self.current_token_index = idx
-            self.client.token = self._get_current_token()
+        for i in range(max_retries):
             try:
-                # Make a simple request to test the token
-                self.client.get_bot_by_codename(self.AI_MODEL)
-            except Exception:
-                # If an error occurs, mark the token as bad
-                self.bad_tokens.append(token)
+                self._rotate_proxy()  # Rotate the proxy for every request
+
+                client = self._get_current_client()
+                if self.AI_MODEL not in client.bot_names:
+                    self.AI_MODEL = client.get_bot_by_codename(self.AI_MODEL)
+
+                last_user_message = [msg for msg in messages if msg.role == "user"][
+                    -1
+                ].content
+
+                if last_user_message.strip():  # Check if the message is not empty
+                    for chunk in client.send_message(
+                        chatbot=self.AI_MODEL, message=last_user_message
+                    ):
+                        pass
+                    self._rotate_client()  # Rotate to the next client for the next request
+                    return {"role": "assistant", "content": chunk["text"]}
+                else:
+                    logging.warning("Attempted to send an empty message, skipping.")
+                    return {"role": "assistant", "content": ""}
+
+            except Exception as e:  # Catch all other exceptions
+                logging.error(f"Unexpected error during instruction: {str(e)}")
+                self._rotate_token()
+                await asyncio.sleep(2**i)  # Exponential backoff
+
+        raise HTTPException(
+            status_code=429, detail="Rate limit exceeded despite retries"
+        )
 
 
 poe_provider = None
@@ -216,13 +195,7 @@ async def startup_event():
         POE_TOKENS=os.getenv("POE_TOKENS").split(","),
         PROXIES=os.getenv("PROXIES").split(","),
         AI_MODEL="vizcacha",
-        MAX_CONCURRENT_REQUESTS=50,  # Set your limit here
     )
-    # Rotate tokens and proxies at startup
-    for _ in range(len(poe_provider.POE_TOKENS)):
-        poe_provider.rotate_token()
-    for _ in range(len(poe_provider.PROXIES)):
-        poe_provider.rotate_proxy()
 
 
 async def stream_response(data):

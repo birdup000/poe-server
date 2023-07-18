@@ -116,6 +116,25 @@ This command will display a list of all network interfaces. The `grep "inet "` c
 
 Remember, IP addresses that start with 192.168 or 10.0 are local addresses - they're only valid on your local network. If you're trying to give someone your IP address to connect to over the internet, you'll need your public IP address, which you can find by searching 'what is my IP' on Google or any other search engine.
 
+## Model Mapping 
+
+```
+MODEL_MAPPING = {
+    "sage": "capybara",
+    "claude-instant": "a2",
+    "claude-2-100k": "a2_2",
+    "claude-instant-100k": "a2_100k",
+    "gpt-3.5-turbo-0613": "chinchilla",
+    "gpt-3.5-turbo": "chinchilla",
+    "gpt-3.5-turbo-16k-0613": "agouti",
+    "gpt-3.5-turbo-16k": "agouti",
+    "gpt-4": "beaver",
+    "gpt-4-0613": "beaver",
+    "gpt-4-32k": "vizcacha",
+    "chat-bison-001": "acouchy",
+}
+```
+
 
 ## API Endpoints
 

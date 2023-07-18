@@ -93,7 +93,16 @@ class PoeProvider:
         self.AI_MODEL = AI_MODEL.lower()
         self.current_token_index = 0
         self.current_proxy_index = 0
-        self.client = poe.Client(token=self._get_current_token(), proxy=self._get_current_proxy())
+        self.current_client_index = 0
+
+        # Create a list of poe.Client instances
+        self.clients = [poe.Client(token=token, proxy=proxy) for token, proxy in zip(self.POE_TOKENS, self.PROXIES)]
+
+    def _get_current_client(self):
+        return self.clients[self.current_client_index]
+
+    def _rotate_client(self):
+        self.current_client_index = (self.current_client_index + 1) % len(self.clients)
 
     def set_model(self, model: str):
         if model in MODEL_MAPPING:
@@ -115,27 +124,26 @@ class PoeProvider:
         while self._get_current_token() in self.bad_tokens:  # Skip over bad tokens
             self.current_token_index = (self.current_token_index + 1) % len(self.POE_TOKENS)
 
-        self.client.token = self._get_current_token()
-
     def _rotate_proxy(self):
         self.current_proxy_index = (self.current_proxy_index + 1) % len(self.PROXIES)
-        self.client.proxy = self._get_current_proxy()
 
     async def instruct(self, messages: List[Message], tokens: int = 0, max_retries=3):
         for i in range(max_retries):
             try:
                 self._rotate_proxy()  # Rotate the proxy for every request
 
-                if self.AI_MODEL not in self.client.bot_names:
-                    self.AI_MODEL = self.client.get_bot_by_codename(self.AI_MODEL)
+                client = self._get_current_client()
+                if self.AI_MODEL not in client.bot_names:
+                    self.AI_MODEL = client.get_bot_by_codename(self.AI_MODEL)
                 
                 last_user_message = [msg for msg in messages if msg.role == "user"][-1].content
 
                 if last_user_message.strip():  # Check if the message is not empty
-                    for chunk in self.client.send_message(
+                    for chunk in client.send_message(
                         chatbot=self.AI_MODEL, message=last_user_message
                     ):
                         pass
+                    self._rotate_client()  # Rotate to the next client for the next request
                     return {"role": "assistant", "content": chunk["text"]}
                 else:
                     logging.warning("Attempted to send an empty message, skipping.")

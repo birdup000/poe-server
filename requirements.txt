@@ -4,3 +4,4 @@ pydantic
 poe-api
 python-dotenv
 openai
+uvicorn

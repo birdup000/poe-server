@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-
 from pydantic import BaseModel
 import asyncio
 import uvicorn
@@ -9,13 +8,10 @@ import logging
 from typing import List, Optional
 import time
 import os
-from dotenv import load_dotenv
 import json
 import random
 import string
 
-# Load environment variables
-load_dotenv()
 
 try:
     import poe
@@ -138,9 +134,12 @@ class PoeProvider:
 
     def _rotate_proxy(self):
         self.current_proxy_index = (self.current_proxy_index + 1) % len(self.PROXIES)
+        if self.current_proxy_index == 0:
+            PROXY_LIST_FILE = "proxies.txt"  # Replace with the actual file path
+            self.PROXIES = load_proxies_from_file(PROXY_LIST_FILE)  # Reload proxies
 
     async def instruct(self, messages: List[Message], tokens: int = 0, max_retries=3):
-        for i in range(max_retries):
+        for _ in range(max_retries):
             try:
                 self._rotate_proxy()  # Rotate the proxy for every request
 
@@ -166,11 +165,32 @@ class PoeProvider:
             except Exception as e:  # Catch all other exceptions
                 logging.error(f"Unexpected error during instruction: {str(e)}")
                 self._rotate_token()
-                await asyncio.sleep(2**i)  # Exponential backoff
+                await asyncio.sleep(2)
 
-        raise HTTPException(
-            status_code=429, detail="Rate limit exceeded despite retries"
-        )
+        self._rotate_token()  # Rotate to the next token for the next attempt
+        return {"role": "assistant", "content": "fail"}
+
+
+def load_tokens_from_file(file_path: str) -> List[str]:
+    with open(file_path, "r") as file:
+        tokens = [token.strip() for token in file.readlines() if token.strip()]
+    return tokens
+
+
+def load_proxies_from_file(file_path: str) -> List[str]:
+    with open(file_path, "r") as file:
+        proxies = [proxy.strip() for proxy in file.readlines() if proxy.strip()]
+    return proxies
+
+
+def save_tokens_to_file(file_path: str, tokens: List[str]):
+    with open(file_path, "w") as file:
+        file.write("\n".join(tokens))
+
+
+def save_proxies_to_file(file_path: str, proxies: List[str]):
+    with open(file_path, "w") as file:
+        file.write("\n".join(proxies))
 
 
 poe_provider = None
@@ -189,9 +209,17 @@ def generate_id():
 @app.on_event("startup")
 async def startup_event():
     global poe_provider
+    # Load the POE_TOKENS from a file called "tokens.txt"
+    POE_TOKENS_FILE = "tokens.txt"
+    POE_TOKENS = load_tokens_from_file(POE_TOKENS_FILE)
+
+    # Load the PROXIES from a file called "proxies.txt"
+    PROXY_LIST_FILE = "proxies.txt"
+    PROXIES = load_proxies_from_file(PROXY_LIST_FILE)
+
     poe_provider = PoeProvider(
-        POE_TOKENS=os.getenv("POE_TOKENS").split(","),
-        PROXIES=os.getenv("PROXIES").split(","),
+        POE_TOKENS=POE_TOKENS,
+        PROXIES=PROXIES,
         AI_MODEL="vizcacha",
     )
 

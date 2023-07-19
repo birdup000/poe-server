@@ -1,12 +1,10 @@
-# Description: Server for the Better GPT chat app
-from hypercorn.config import Config
-from hypercorn.asyncio import serve
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+
 from pydantic import BaseModel
 import asyncio
-import hypercorn
+import uvicorn
 import logging
 from typing import List, Optional
 import time
@@ -323,6 +321,4 @@ async def generate_completion(request: Request, model: str, payload: CompletionP
 
 
 if __name__ == "__main__":
-    config = Config()
-    config.bind = ["0.0.0.0:8000"]  # The IP and port to bind to
-    asyncio.run(serve(app, config))
+    uvicorn.run(app, host="0.0.0.0", workers=4, port=8000)

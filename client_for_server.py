@@ -1,73 +1,137 @@
-from tkinter import *
+import sys
+import time
 import requests
-from datetime import datetime
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QTextEdit, QLineEdit, QPushButton, QLabel, QScrollBar
+from PyQt5.QtGui import QIcon, QColor, QPalette, QFont
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QCoreApplication
 
 
-def send_message(event=None):
-    url = "http://localhost:8000/generate-response"
-    headers = {"Content-Type": "application/json"}
+class TypingThread(QThread):
+    typing_done = pyqtSignal()
+    typing_output = pyqtSignal(str)
 
-    user_input = entry_field.get()
-    payload = {"text": user_input}
+    def __init__(self, response_text):
+        super().__init__()
+        self.response_text = response_text
 
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-        response.raise_for_status()  # Raises a stored HTTPError, if one occurred.
-        server_response = response.json()
-        server_response_text = server_response.get('response', 'No response')
-
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        msg_list.insert(END, timestamp + " You: " + user_input + '\n\n')
-        entry_field.delete(0, END)
-
-        # Disable send button during typing effect
-        send_button.config(state=DISABLED)
-        type_response(timestamp + " Server: " + server_response_text)
-
-    except requests.exceptions.HTTPError as err:
-        msg_list.insert(END, f"HTTP error occurred: {err}\n")
-    except Exception as err:
-        msg_list.insert(END, f"An error has occurred: {err}\n")
-
-    # Set focus back to entry_field
-    entry_field.focus()
+    def run(self):
+        for char in self.response_text:
+            QThread.msleep(50)  # Simulate typing speed
+            self.typing_output.emit(char)
+        self.typing_done.emit()
 
 
-def type_response(response):
-    def append_character(character):
-        msg_list.insert(END, character)
-        msg_list.see(END)
-        if character == '\n':
-            # Re-enable send button after typing effect
-            send_button.config(state=NORMAL)
+class LoadingLabel(QLabel):
+    def __init__(self):
+        super().__init__()
+        self.setText("Loading")
+        self.setFont(QFont("Arial", 14, QFont.Bold))
+        self.setAlignment(Qt.AlignCenter)
+        self.dots = 0
 
-    for character in response + '\n\n':
-        root.after(50, append_character, character)  # Delay of 50ms between each character
+    def update_dots(self, progress):
+        self.dots = (progress % 3) + 1
+        self.setText("Loading" + "." * self.dots)
 
 
-root = Tk()
-root.title("Chat Client")
-root.geometry("800x600")
+class ChatClient(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.init_ui()
+        self.messages = [{'role': 'system', 'content': 'You are a helpful assistant.'}]
+        self.typing_thread = None
 
-root.configure(bg='black')
+    def init_ui(self):
+        self.setWindowTitle('ChatterBox')
+        self.setWindowIcon(QIcon('icon.png'))
+        self.resize(400, 500)
 
-messages_frame = Frame(root, bg='black')
-messages_frame.grid(row=0, column=0, columnspan=2, sticky='nsew')
+        # Create widgets
+        self.message_view = QTextEdit()
+        self.user_input = QLineEdit()
+        self.send_button = QPushButton("Send")
+        self.loading_label = LoadingLabel()
+        self.loading_label.hide()
 
-scrollbar = Scrollbar(messages_frame)
+        # Set widget styles
+        self.message_view.setStyleSheet("QTextEdit { color: white; background-color: #333333; padding: 5px; }")
+        self.user_input.setStyleSheet("QLineEdit { color: white; background-color: #333333; padding: 5px; }")
+        self.send_button.setStyleSheet("QPushButton { color: white; background-color: #555555; padding: 5px; }")
 
-msg_list = Text(messages_frame, yscrollcommand=scrollbar.set, wrap=WORD, bg='black', fg='white', spacing2=5)
-scrollbar.pack(side=RIGHT, fill=Y)
-msg_list.pack(side=LEFT, fill=BOTH, expand=True)
+        self.send_button.clicked.connect(self.send_message)
 
-entry_field = Entry(root, bg='black', fg='white', insertbackground='white')
-entry_field.bind("<Return>", send_message)
-entry_field.grid(row=1, column=0, sticky='ew', padx=10, pady=10)
+        # Set up layout
+        layout = QVBoxLayout()
+        layout.addWidget(self.message_view)
+        layout.addWidget(self.user_input)
+        layout.addWidget(self.send_button)
+        layout.addWidget(self.loading_label)
 
-send_button = Button(root, text="Send", command=send_message, bg='black', fg='white', activebackground='grey')
-send_button.grid(row=1, column=1, padx=10, pady=10)
+        self.setLayout(layout)
 
-root.grid_rowconfigure(0, weight=1)
-root.grid_columnconfigure(0, weight=1)
+    def send_message(self):
+        user_message = self.user_input.text()
+        if user_message.lower() == "exit":
+            sys.exit()
+        self.loading_screen()
+        self.messages.append({'role': 'user', 'content': user_message})
+        self.update_message_view()
 
-root.mainloop()
+        self.show_response()
+
+    def loading_screen(self):
+        self.loading_label.show()
+
+    def show_response(self):
+        self.loading_label.hide()
+        response_text = self.generate_response(self.messages)
+        self.typing_thread = TypingThread(response_text)
+        self.typing_thread.typing_done.connect(self.update_message_view)
+        self.typing_thread.typing_output.connect(self.append_char_to_last_message)
+        self.typing_thread.start()
+
+    def generate_response(self, messages):
+        response = requests.post(
+            "http://localhost:8000/v1/chat/completions",  # Your server's address
+            json={"messages": messages}
+        )
+        response.raise_for_status()  # Raise an error if the request failed
+        data = response.json()
+        return data["choices"][0]["content"]
+
+    def append_char_to_last_message(self, char):
+        self.messages[-1]['content'] += char
+        self.update_message_view(scroll_to_bottom=True)
+
+    def update_message_view(self, scroll_to_bottom=False):
+        self.message_view.clear()
+
+        for message in self.messages:
+            role = message['role']
+            content = message['content']
+
+            if role == 'user':
+                content = f"<b>You:</b> {content}"
+                self.message_view.append(content)
+            elif role == 'assistant':
+                content = f"<b>Assistant:</b> {content}"
+                self.message_view.append(content)
+            elif role == 'system':
+                content = f"<i>{content}</i>"
+                self.message_view.append(content)
+
+        self.message_view.append("")  # Add a blank line for spacing
+
+        if scroll_to_bottom:
+            scrollbar = self.message_view.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
+
+        self.user_input.clear()
+        self.user_input.setFocus()
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    chat_client = ChatClient()
+    chat_client.show()
+    sys.exit(app.exec_())

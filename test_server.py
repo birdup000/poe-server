@@ -1,11 +1,13 @@
-import requests
+import openai
 
-url = "http://localhost:8000/generate-response"
+openai.api_key = "anyrandomstring"
+openai.api_base = "https://api.greengecko.ml/v1"
 
-payload = {"text": "Hello, how are you?"}
+response = openai.ChatCompletion.create(
+    model='chinchilla',
+    messages=[
+        {'role': 'user', 'content': "Hello"},
+    ]
+)
 
-headers = {"Content-Type": "application/json"}
-
-response = requests.post(url, json=payload, headers=headers)
-
-print(response.json())
+print(response)

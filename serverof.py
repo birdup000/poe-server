@@ -264,11 +264,7 @@ async def stream_response(data):
             ],
         }
         yield f"data: {json.dumps(done_chunk)}\n\n"
-        yield "data: [DONE]\n\n"
-    else:
-        for chunk in data:
-            yield f"data: {json.dumps(chunk)}\n\n"
-        yield "data: [DONE]\n\n"
+        yield "data: [DONE]\n\n"  # Signal the end of the stream
 
 
 @app.post("/v1/chat/completions", status_code=status.HTTP_200_OK)
@@ -306,9 +302,14 @@ async def generate_chat_response(request: Request):
         # Use the stream_response function to send the data in chunks if streaming is enabled
         if messages.stream:
             response_data["object"] = "chat.completion.chunk"
-            return StreamingResponse(
-                stream_response(response_data), media_type="text/event-stream"
-            )
+            if isinstance(response_data, dict):
+                return StreamingResponse(
+                    stream_response(response_data), media_type="text/event-stream"
+                )
+            else:
+                raise HTTPException(
+                    status_code=500, detail="Data format is not correct for streaming."
+                )
         else:
             return response_data
 

@@ -350,4 +350,4 @@ async def generate_completion(request: Request, model: str, payload: CompletionP
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", workers=4, port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -120,7 +120,7 @@ Remember, IP addresses that start with 192.168 or 10.0 are local addresses - the
 
 ```
 MODEL_MAPPING = {
-    "sage": "capybara",
+    "Assistant": "capybara",
     "claude-instant": "a2",
     "claude-2-100k": "a2_2",
     "claude-instant-100k": "a2_100k",

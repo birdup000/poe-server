@@ -41,7 +41,7 @@ app.add_middleware(
 )
 
 MODEL_MAPPING = {
-    "Assistant": "capybara",
+    "assistant": "capybara",
     "claude-instant": "a2",
     "claude-2-100k": "a2_2",
     "claude-instant-100k": "a2_100k",

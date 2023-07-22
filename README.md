@@ -119,7 +119,6 @@ Remember, IP addresses that start with 192.168 or 10.0 are local addresses - the
 ## Model Mapping 
 
 ```
-MODEL_MAPPING = {
     "assistant": "capybara",
     "claude-instant": "a2",
     "claude-2-100k": "a2_2",
@@ -132,7 +131,6 @@ MODEL_MAPPING = {
     "gpt-4-0613": "beaver",
     "gpt-4-32k": "vizcacha",
     "chat-bison-001": "acouchy",
-}
 ```
 
 

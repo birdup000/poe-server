@@ -157,10 +157,10 @@ print(response)
 
 ## Configuration
 
-You can configure the project by providing the following environment variables (.env):
+You can configure the project by providing the following environment variables (set inside the text files):
 
-- `POE_TOKENS`: A comma-separated list of Poe API tokens.
-- `PROXIES`: A comma-separated list of proxies.
+- `Inside the tokens.txt`: A new line for each Poe API token.
+- `Inside the proxies.txt`: A new line for each proxy server.
 
 ## Contributing
 

@@ -4,19 +4,21 @@ This project is a FastAPI-based application that generates AI-generated response
 
 # Project Status
 
-![API Wrapper Status](https://img.shields.io/badge/API%20Wrapper-Broken-red)
+![API Wrapper Status](https://img.shields.io/badge/API%20Wrapper-Working-green)
 
 ## Details
 
-As of our latest update, the API wrapper that this project depends on is currently experiencing issues. This means that our project may not function as expected until these issues are resolved. 
+Due to recent changes, our project may experience occasional downtimes linked to issues with a crucial API wrapper it depends on. This could lead to periods where the project does not function as expected.
 
-We're actively monitoring the situation and will update this status when the API wrapper is operational again. Please check back for updates.
+Thankfully, you don't have to be in the dark about this. We're actively tracking these potential disruptions and will immediately update the operational status of the API wrapper on this README. This way, you can quickly check here to know if our project is currently up and running or facing some downtime.
 
-Thank you for your patience and understanding.
+We appreciate your understanding during this time. Rest assured, we're working diligently to ensure consistent functionality. Remember to check this space for the latest status updates.
+
+Thank you for your patience.
 
 last checked version:
 ```
-poe-api 0.4.11
+poe-api 0.4.13
 ``` 
 
 

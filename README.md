@@ -59,17 +59,9 @@ cd poe-server
 pip install -r requirements.txt
 ```
 
-3. Define Proxy and Tokens inside the .env file
+3. Define Proxy and Tokens inside the proxies.txt file
 (Proxy is required)
-if you don't define proxy you will have this error
-
-Please follow this issue page to add proxy
-
-```
-tls_client.exceptions.TLSClientExeption: failed to build client out of request input: parse "socks5://user:pass@server:port": invalid port ":port" after host
-```
-
-[Proxy instructions]  https://github.com/greengeckowizard/poe-server/issues/3
+if you don't define proxy you will have an error. Any of the proxies that work inside the poe-api will work in this project.
 
 
 4. Running the FastAPI Server Locally

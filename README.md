@@ -61,11 +61,11 @@ pip install -r requirements.txt
 
 3. Define Proxy and Tokens inside the proxies.txt for the proxies and for the tokens put inside the tokens.txt file
 (Proxy and Tokens are required to operate this Project WE DO NOT PROVIDE ANY PROXIES OR TOKENS UNDER ANY CIRCUMSTANCES)
-<br>
+
 if you don't define a proxy or token you will have errors. Note:Any of the proxies that work inside the poe-api will work in this project.
 <br>
 
-4. Running the FastAPI Server Locally
+5. Running the FastAPI Server Locally
 
 You have two options for running the server: Using Python directly, or using Docker.
 

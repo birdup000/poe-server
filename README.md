@@ -14,6 +14,11 @@ We're actively monitoring the situation and will update this status when the API
 
 Thank you for your patience and understanding.
 
+last checked version:
+```
+poe-api 0.4.11
+``` 
+
 
 ## Project To-Do List
 

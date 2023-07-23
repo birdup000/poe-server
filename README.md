@@ -2,7 +2,17 @@
 
 This project is a FastAPI-based application that generates AI-generated responses using the Poe API (https://github.com/ading2210/poe-api).
 
+# Project Status
 
+![API Wrapper Status](https://img.shields.io/badge/API%20Wrapper-Broken-red)
+
+## Details
+
+As of our latest update, the API wrapper that this project depends on is currently experiencing issues. This means that our project may not function as expected until these issues are resolved. 
+
+We're actively monitoring the situation and will update this status when the API wrapper is operational again. Please check back for updates.
+
+Thank you for your patience and understanding.
 
 
 ## Project To-Do List

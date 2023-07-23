@@ -2,6 +2,13 @@
 
 This project is a FastAPI-based application that generates AI-generated responses using the Poe API Wrapper (https://github.com/ading2210/poe-api).
 
+# Disclaimer
+The use of the Poe Server and the api wrapper is at your own risk. We are not responsible for any damages or losses that may occur as a result of your use of the server or API. This includes, but is not limited to, damage to your computer, loss of data, or violation of the Terms of Service (TOS) for the server or API.
+
+We do not endorse or promote the use of the server or API in any way that violates the TOS. If you use the server or API in a way that violates the TOS, you may be subject to disciplinary action by the developers of the server or API. This may include, but is not limited to, loss of your account or proxy provider.
+
+Please use the server and API responsibly and in accordance with the TOS for the server and API. If you have any questions or concerns, please contact the developers of the server or API by opening an issue on this Github repo.
+
 # Project Status
 
 ![API Wrapper Status](https://img.shields.io/badge/API%20Wrapper-Broken-red)

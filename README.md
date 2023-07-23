@@ -4,7 +4,7 @@ This project is a FastAPI-based application that generates AI-generated response
 
 # Project Status
 
-![API Wrapper Status](https://img.shields.io/badge/API%20Wrapper-Working-green)
+![API Wrapper Status](https://img.shields.io/badge/API%20Wrapper-Broken-red)
 
 ## Details
 

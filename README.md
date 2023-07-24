@@ -72,7 +72,7 @@ pip install -r requirements.txt
 if you don't define a proxy or token you will have errors. Note:Any of the proxies that work inside the poe-api will work in this project.
 <br>
 
-5. Running the FastAPI Server Locally
+4. Running the FastAPI Server Locally
 
 You have two options for running the server: Using Python directly, or using Docker.
 

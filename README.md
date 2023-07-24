@@ -3,7 +3,7 @@
 This project is a FastAPI-based application that generates AI-generated responses using the Poe API Wrapper (https://github.com/ading2210/poe-api).
 
 # Disclaimer
-The use of the Poe Server and the api wrapper is at your own risk. We are not responsible for any damages or losses that may occur as a result of your use of the server or API. This includes, but is not limited to, damage to your computer, loss of data, or violation of the Terms of Service (TOS) for the server or API.
+The use of the Poe Server and the api wrapper is at your own risk. We are not responsible for any damages or losses that may occur as a result of your use of the server or API. This includes, but is not limited to, damage to your computer, loss of data, or violation of the Terms of Service (TOS) for Poe (Quora).
 
 We do not endorse or promote the use of the Poe server or API wrapper in any way that violates the TOS. If you use the server or API in a way that violates the TOS, you may be subject to disciplinary action by Quora .This may include, but is not limited to, loss of your account or proxy provider.
 

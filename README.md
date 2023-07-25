@@ -40,6 +40,7 @@ poe-api 0.4.17
 - [ ] Add Anse Support (https://github.com/anse-app/anse)
 - [ ] Add One-Api Support (https://github.com/songquanpeng/one-api)
 - [ ] Add Embeddings to OPEN AI format (/api/v1/embedding)
+- [ ] Add AI.LS Support (https://ai.ls/)
 
 
 

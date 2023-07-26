@@ -11,7 +11,8 @@ Please use the server and API responsibly and in accordance with the TOS for the
 
 # Project Status
 
-![API Wrapper Status](https://img.shields.io/badge/API%20Wrapper-Broken-red)
+[![API Wrapper Status](https://img.shields.io/badge/API%20Wrapper-Broken-red)](https://img.shields.io/badge/API%20Wrapper%20broken-red?label=Partially%20broken%20Some%20models%20don't%20function%20properly
+)
 
 ## Details
 

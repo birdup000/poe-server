@@ -149,6 +149,7 @@ Remember, IP addresses that start with 192.168 or 10.0 are local addresses - the
     "gpt-4-0613": "beaver",
     "gpt-4-32k": "vizcacha",
     "chat-bison-001": "acouchy",
+    "llama-2-70b": "llama_2_70b_chat",
 ```
 
 

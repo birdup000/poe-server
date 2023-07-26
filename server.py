@@ -11,6 +11,9 @@ import os
 import json
 import random
 import string
+import sys
+import signal
+
 
 
 try:
@@ -40,6 +43,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 MODEL_MAPPING = {
     "assistant": "capybara",
     "claude-instant": "a2",
@@ -53,6 +57,7 @@ MODEL_MAPPING = {
     "gpt-4-0613": "beaver",
     "gpt-4-32k": "vizcacha",
     "chat-bison-001": "acouchy",
+    "llama-2-70b": "llama_2_70b_chat",
 }
 
 
@@ -102,6 +107,13 @@ class PoeProvider:
             for token, proxy in zip(self.POE_TOKENS, self.PROXIES)
         ]
 
+    def check_remaining_messages(self):
+        for client in self.clients:
+            remaining_messages = client.get_remaining_messages(self.AI_MODEL)
+            if remaining_messages > 0:
+                return client
+        return None
+
     def _get_current_client(self):
         return self.clients[self.current_client_index]
 
@@ -143,7 +155,10 @@ class PoeProvider:
             try:
                 self._rotate_proxy()  # Rotate the proxy for every request
 
-                client = self._get_current_client()
+                client = self.check_remaining_messages()
+                if client is None:
+                    raise Exception("No available clients for the current model")
+
                 if self.AI_MODEL not in client.bot_names:
                     self.AI_MODEL = client.get_bot_by_codename(self.AI_MODEL)
 
@@ -153,7 +168,7 @@ class PoeProvider:
 
                 if last_user_message.strip():  # Check if the message is not empty
                     for chunk in client.send_message(
-                        chatbot=self.AI_MODEL, message=last_user_message
+                        chatbot=self.AI_MODEL, message=last_user_message, async_recv = True, with_chat_break = True
                     ):
                         pass
                     self._rotate_client()  # Rotate to the next client for the next request
@@ -166,7 +181,18 @@ class PoeProvider:
                 logging.error(f"Unexpected error during instruction: {str(e)}")
                 self._rotate_token()
                 await asyncio.sleep(2)
-
+                if str(e) == "Response timed out.":
+                    for retry in range(max_retries):  # Don't wait on last iteration
+                        logging.warning("Response timed out. Retrying...")
+                        await asyncio.sleep(2)  # Wait for 2 seconds before retrying
+                        continue
+                    else:
+                        logging.error("Failed after 3 retries.")
+                elif str(e) in ["Websocket closed with status None: None",
+                                 "Connection to remote host was lost. - goodbye"]:
+                    logging.warning("Restarting due to websocket error...")
+                    os.kill(os.getpid(), signal.SIGINT)
+                    break
         self._rotate_token()  # Rotate to the next token for the next attempt
         return {"role": "assistant", "content": "fail"}
 

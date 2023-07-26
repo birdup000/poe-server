@@ -1,7 +1,7 @@
 fastapi
-hypercorn
 pydantic
 poe-api
 python-dotenv
 openai
 uvicorn
+tqdm

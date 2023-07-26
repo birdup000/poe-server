@@ -11,7 +11,7 @@ Please use the server and API responsibly and in accordance with the TOS for the
 
 # Project Status
 
-![API Wrapper Status](https://img.shields.io/badge/API%20Wrapper-Working-green)
+![API Wrapper Status](https://img.shields.io/badge/API%20Wrapper-Broken-red)
 
 ## Details
 

@@ -26,8 +26,13 @@ Thank you for your patience.
 last checked version:
 ```
 poe-api 0.4.17 
-``` 
+```
 
+last time last checked:
+
+```
+03:39 AM (UTC +0)
+```
 
 ## Project To-Do List
 

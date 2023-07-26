@@ -16,6 +16,7 @@ MODEL_MAPPING = {
     "gpt-4-0613": "beaver",
     "gpt-4-32k": "vizcacha",
     "chat-bison-001": "acouchy",
+    "llama-2-70b": "llama_2_70b_chat",
 }
 
 def load_from_file(file_path: str) -> list:

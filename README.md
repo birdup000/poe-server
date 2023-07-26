@@ -11,7 +11,8 @@ Please use the server and API responsibly and in accordance with the TOS for the
 
 # Project Status
 
-![Static Badge](https://img.shields.io/badge/API%20Wrapper%20broken-red?label=Partially%20broken%20Some%20models%20don't%20function%20properly)
+![Static Badge](https://img.shields.io/badge/API%20Wrapper%20broken-red?label=Some%20models%20don't%20function%20properly%20(GPT-4%20Models%20Affected))
+
 
 
 ## Details

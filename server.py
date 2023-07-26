@@ -85,7 +85,7 @@ class CompletionPayload(BaseModel):
 class PoeResponse(BaseModel):
     choices: List[Message]
 
-
+#### https://headers.uniqueostrich18.repl.co/ Go to this site to enter YOUR headers so you can set inside the clients
 poe.headers = {
   "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0",
   "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -114,7 +114,7 @@ class PoeProvider:
 
         # Create a list of poe.Client instances
         self.clients = [
-            poe.Client(token=token, proxy=proxy)
+            poe.Client(token=token, proxy=proxy, headers=poe.headers)
             for token, proxy in zip(self.POE_TOKENS, self.PROXIES)
         ]
 

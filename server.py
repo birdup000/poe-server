@@ -60,6 +60,7 @@ MODEL_MAPPING = {
     "llama-2-70b": "llama_2_70b_chat",
 }
 
+IGNORED_MODELS = ["assistant", "claude-instant", "gpt-3.5-turbo-0613", "gpt-3.5-turbo", "chat-bison-001", "llama-2-70b"]
 
 class Message(BaseModel):
     role: str
@@ -83,6 +84,16 @@ class CompletionPayload(BaseModel):
 
 class PoeResponse(BaseModel):
     choices: List[Message]
+
+
+poe.headers = {
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "Accept-Encoding": "gzip, deflate, br",
+  "Accept-Language": "en-US,en;q=0.5",
+  "Te": "trailers",
+  "Upgrade-Insecure-Requests": "1"
+}
 
 
 class PoeProvider:
@@ -109,9 +120,12 @@ class PoeProvider:
 
     def check_remaining_messages(self):
         for client in self.clients:
-            remaining_messages = client.get_remaining_messages(self.AI_MODEL)
-            if remaining_messages > 0:
-                return client
+            if self.AI_MODEL in IGNORED_MODELS:
+                logging.warning(f"Skipping remaining messages check for model {self.AI_MODEL}.")
+            return client
+        remaining_messages = client.get_remaining_messages(self.AI_MODEL)
+        if remaining_messages is not None and remaining_messages > 0:
+            return client
         return None
 
     def _get_current_client(self):
@@ -162,17 +176,15 @@ class PoeProvider:
                 if self.AI_MODEL not in client.bot_names:
                     self.AI_MODEL = client.get_bot_by_codename(self.AI_MODEL)
 
-                last_user_message = [msg for msg in messages if msg.role == "user"][
-                    -1
-                ].content
+                last_user_message = [msg for msg in messages if msg.role == "user"][-1].content
 
                 if last_user_message.strip():  # Check if the message is not empty
                     for chunk in client.send_message(
-                        chatbot=self.AI_MODEL, message=last_user_message, async_recv = True, with_chat_break = True
-                    ):
+        chatbot=self.AI_MODEL, message=last_user_message, async_recv = True, with_chat_break = True
+                     ):
                         pass
-                    self._rotate_client()  # Rotate to the next client for the next request
-                    return {"role": "assistant", "content": chunk["text"]}
+                        self._rotate_client()  # Rotate to the next client for the next request
+                        return {"role": "assistant", "content": chunk["text"] + "\n---\n"}  # add a chat break at the end of the message
                 else:
                     logging.warning("Attempted to send an empty message, skipping.")
                     return {"role": "assistant", "content": ""}

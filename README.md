@@ -205,3 +205,5 @@ see the [LICENSE](LICENSE) file for more details.
 ## Credits
 
 Thank you to PaniniCo for adding streaming support and model corresponding to names to Poe Models!!
+
+Thank you UltGamer for adding better stability with checking bad tokens and increasing better load capacity support!!
